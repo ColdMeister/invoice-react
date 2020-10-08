@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 //import {CountryService} from '../service/CountryService';
 import {InputText} from 'primereact/inputtext';
-import {InputTextarea} from 'primereact/inputtextarea';
+//import {InputTextarea} from 'primereact/inputtextarea';
 import {Messages} from 'primereact/messages';
+//import {Message} from 'primereact/message';
 import {Growl} from 'primereact/growl';
 //import {AutoComplete} from 'primereact/autocomplete';
 //import {MultiSelect} from 'primereact/multiselect';
@@ -37,9 +38,34 @@ export class InvoiceAddPage extends Component {
          campAddress:"",
          campPhone:"",
          campTotal:""
-         // campItemId1:"",
-         // campItemName1:"",
        }
+
+       this.sendSave = this.sendSave.bind(this);
+
+  }
+
+  showSuccess() {
+      let msg = {severity: 'success', summary: 'Success Message', detail: 'Order submitted'};
+      this.growl.show(msg);
+      this.messages.show(msg);
+  }
+
+  showInfo() {
+      let msg = {severity: 'info', summary: 'Info Message', detail: 'PrimeReact rocks'};
+      this.growl.show(msg);
+      this.messages.show(msg);
+  }
+
+  showWarn() {
+      let msg = {severity: 'warn', summary: 'Warn Message', detail: 'There are unsaved changes'};
+      this.growl.show(msg);
+      this.messages.show(msg);
+  }
+
+  showError() {
+      let msg = {severity: 'error', summary: 'Error Message', detail: 'Validation failed'};
+      this.growl.show(msg);
+      this.messages.show(msg);
   }
 
 
@@ -47,6 +73,8 @@ export class InvoiceAddPage extends Component {
   render() {
         return (
           <div>
+            <Messages ref={(el) => this.messages = el} />
+            <Growl ref={(el) => this.growl = el} style={{marginTop: '75px'}} />
               <div className="p-fluid">
                   <div className="p-field">
                       <label htmlFor="invoice_name">Invoice Name</label>
@@ -116,19 +144,9 @@ export class InvoiceAddPage extends Component {
 
     sendSave(){
       const baseUrl = "http://localhost:3000/invoice/create";
-      var count=0;
-      // $('#container').find('input[type="text"]').each(function(){
-      //     if ($.trim($(this).val()).length) {
-      //         count+=1
-      //         alert("Filled Value="+$(this).val());
-      //     }
-      // });
-      // alert("Total Input Count="+$('#container').find('input[type="text"]').length+"//Filled Inputs Count="+count);
 
       var no_of_input_text = $('#container').find('input[type="text"]').length  - 6;
-      alert(no_of_input_text);
-      // var y = 1;
-      // var x = 'item_name'+y;
+
       var arr = [];
 
       for (var i = 1; i <= no_of_input_text; i++){
@@ -137,7 +155,7 @@ export class InvoiceAddPage extends Component {
         var qty         = $("#qty"+i).val();
         var amount      = $("#amount"+i).val();
 
-        if(item_id != ''){
+        if(item_id !== ''){
           arr.push({item_id:item_id, item_name:item_name,quantity:qty, amount:amount});
         }
       }
@@ -155,10 +173,20 @@ export class InvoiceAddPage extends Component {
       axios.post(baseUrl,datapost)
       .then(response=>{
         if (response.data.success===true) {
-          alert(response.data.message)
+          //alert(response.data.message)
+          let msg = {severity: 'success', summary: 'Success', detail: 'Adding Invoice'};
+          this.messages.show(msg);
+          setTimeout(
+              function() {
+                  window.location.reload(false);
+              },
+              2000
+          );
         }
         else {
-          alert(response.data.message)
+          //alert(response.data.message)
+          let msg = {severity: 'error', summary: 'Error', detail: 'Adding Invoice failed'};
+          this.messages.show(msg);
         }
       }).catch(error=>{
         alert("Error 34 "+error)
