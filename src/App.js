@@ -8,6 +8,9 @@ import {Route} from 'react-router-dom';
 import {Dashboard} from './components/Dashboard';
 import {FormsDemo} from './components/FormsDemo';
 import {SampleDemo} from './components/SampleDemo';
+import {InvoicePage} from './components/InvoicePage';
+import {InvoiceEditPage} from './components/InvoiceEditPage';
+import {InvoiceAddPage} from './components/InvoiceAddPage';
 import {DataDemo} from './components/DataDemo';
 import {PanelsDemo} from './components/PanelsDemo';
 import {OverlaysDemo} from './components/OverlaysDemo';
@@ -78,7 +81,7 @@ class App extends Component {
                 mobileMenuActive: !mobileMenuActive
             });
         }
-       
+
         event.preventDefault();
     }
 
@@ -97,6 +100,7 @@ class App extends Component {
 
     createMenu() {
         this.menu = [
+            {label: 'Invoice Page', icon: 'pi pi-fw pi-file', to: '/invoice'},
             {label: 'Dashboard', icon: 'pi pi-fw pi-home', command: () => {window.location = '#/'}},
             {
                 label: 'Menu Modes', icon: 'pi pi-fw pi-cog',
@@ -236,6 +240,9 @@ class App extends Component {
                 </div>
 
                 <div className="layout-main">
+                    <Route path="/invoice_add" component={InvoiceAddPage} />
+                    <Route path="/invoice_edit" component={InvoiceEditPage} />
+                    <Route path="/invoice" component={InvoicePage} />
                     <Route path="/" exact component={Dashboard} />
                     <Route path="/forms" component={FormsDemo} />
                     <Route path="/sample" component={SampleDemo} />
