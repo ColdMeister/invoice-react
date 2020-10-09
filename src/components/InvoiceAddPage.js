@@ -44,32 +44,6 @@ export class InvoiceAddPage extends Component {
 
   }
 
-  showSuccess() {
-      let msg = {severity: 'success', summary: 'Success Message', detail: 'Order submitted'};
-      this.growl.show(msg);
-      this.messages.show(msg);
-  }
-
-  showInfo() {
-      let msg = {severity: 'info', summary: 'Info Message', detail: 'PrimeReact rocks'};
-      this.growl.show(msg);
-      this.messages.show(msg);
-  }
-
-  showWarn() {
-      let msg = {severity: 'warn', summary: 'Warn Message', detail: 'There are unsaved changes'};
-      this.growl.show(msg);
-      this.messages.show(msg);
-  }
-
-  showError() {
-      let msg = {severity: 'error', summary: 'Error Message', detail: 'Validation failed'};
-      this.growl.show(msg);
-      this.messages.show(msg);
-  }
-
-
-
   render() {
         return (
           <div>

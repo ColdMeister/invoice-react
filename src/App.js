@@ -241,7 +241,7 @@ class App extends Component {
 
                 <div className="layout-main">
                     <Route path="/invoice_add" component={InvoiceAddPage} />
-                    <Route path="/invoice_edit" component={InvoiceEditPage} />
+                    <Route path="/invoice_edit/:id" component={InvoiceEditPage} />
                     <Route path="/invoice" component={InvoicePage} />
                     <Route path="/" exact component={Dashboard} />
                     <Route path="/forms" component={FormsDemo} />
