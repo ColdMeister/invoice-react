@@ -33,54 +33,66 @@ export class InvoiceEditPage extends Component {
 
   constructor(props){
 
-       super(props);
+    super(props);
+    this.state = {
+      campInvoiceName: "",
+      campCompanyName:"",
+      campAddress:"",
+      campPhone:"",
+      campTotal:"",
+      campInvoiceDetail:''
+    }
 
-       this.state = {
-         campInvoiceName: "",
-         campCompanyName:"",
-         campAddress:"",
-         campPhone:"",
-         campTotal:"",
-         campInvoiceDetail:"",
-         counter: 1
-       }
 
-       this.sendSave = this.sendSave.bind(this);
+     this.sendUpdate = this.sendUpdate.bind(this);
+     this.handleInputChange = this.handleInputChange.bind(this)
+
+
 
   }
 
+  handleInputChange(index, newValue) {
+    //copy the array first
+   const updatedArray = [...this.state.campInvoiceDetail];
+   updatedArray[index] = newValue;
+   this.setState({
+        campInvoiceDetail: updatedArray
+    });
+  }
+
+
   componentDidMount(){
-    let invoiceId = this.props.match.params.id;
+      let invoiceId = this.props.match.params.id;
 
-    const url = baseUrl+"/invoice/get/"+invoiceId
-    console.log(url);
-    axios.get(url)
-    .then(res=>{
-      if (res.data.success) {
-        const data = res.data.data[0];
-        this.setState({
-          dataInvoice:data,
-          campInvoiceName:data.invoice_name,
-          campCompanyName:data.company_name,
-          campAddress:data.address,
-          campPhone:data.phone,
-          campTotal:data.total,
-          campInvoiceDetail:data.InvoiceDetails
-        })
+      const url = baseUrl+"/invoice/get/"+invoiceId
+      console.log(url);
+      axios.get(url)
+      .then(res=>{
+        if (res.data.success) {
+          const data = res.data.data[0];
+          this.setState({
+            dataInvoice:data,
+            campInvoiceName:data.invoice_name,
+            campCompanyName:data.company_name,
+            campAddress:data.address,
+            campPhone:data.phone,
+            campTotal:data.total,
+            campInvoiceDetail:data.InvoiceDetails
+          })
 
 
-      }
-      else {
-        alert("Error web service")
-      }
-    })
-    .catch(error=>{
-      alert("Error server "+error)
-    })
+        }
+        else {
+          alert("Error web service")
+        }
+      })
+      .catch(error=>{
+        alert("Error server "+error)
+      })
   }
 
   render() {
-        //if (this.state.features){
+
           return (
             <div>
               <Messages ref={(el) => this.messages = el} />
@@ -112,48 +124,49 @@ export class InvoiceEditPage extends Component {
 
                   Object.keys(this.state.campInvoiceDetail).map((key, index) => {
                       //console.log(this.state.campInvoiceDetail[key].item_id);
-                      return <div className="p-fluid p-formgrid p-grid">
+
+                      return <div className="p-fluid p-formgrid p-grid" key={index} >
 
                                 <div className="p-field p-col">
                                     <label htmlFor="item_id">Item id</label>
-                                    <InputText id={this.state.counter} value={this.state.campInvoiceDetail[key].item_id} type="text"/>
+                                    <InputText id={`item_id${key}`} value={this.state.campInvoiceDetail[key].item_id}  type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
                                 </div>
                                 <div className="p-field p-col">
-                                    <label htmlFor="item_name1">Item Name</label>
-                                    <InputText id="item_name1" value={this.state.campInvoiceDetail[key].item_name} type="text"/>
+                                    <label htmlFor={`item_name${key}`}>Item Name</label>
+                                    <InputText id={`item_name${key}`} value={this.state.campInvoiceDetail[key].item_name} type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
                                 </div>
                                 <div className="p-field p-col">
-                                    <label htmlFor="qty1">Quantity</label>
-                                    <InputText id="qty1" value={this.state.campInvoiceDetail[key].quantity} type="text"/>
+                                    <label htmlFor={`qty${key}`}>Quantity</label>
+                                    <InputText id={`qty${key}`} value={this.state.campInvoiceDetail[key].quantity} type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
                                 </div>
                                 <div className="p-field p-col">
-                                    <label htmlFor="amount1">Amount</label>
-                                    <InputText id="amount1" value={this.state.campInvoiceDetail[key].amount} type="text"/>
+                                    <label htmlFor={`amount${key}`}>Amount</label>
+                                    <InputText id={`amount${key}`} value={this.state.campInvoiceDetail[key].amount} type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
                                 </div>
                             </div>
-                            
+
                   })
 
                 }
 
 
-
-                    <Button label="Add Invoice"  onClick={()=>this.sendUpdate()}/>
+                    <Button label="Update Invoice"  onClick={()=>this.sendUpdate()}/>
                 </div>
             </div>
 
           );
-      //}
+
     }
 
-    sendSave(){
-      const baseUrl = "http://localhost:3000/invoice/create";
+    sendUpdate(){
+      let invId = this.props.match.params.id;
+      const baseUrl = "http://localhost:3000/invoice/update/"+invId;
 
-      var no_of_input_text = $('#container').find('input[type="text"]').length  - 6;
+      var no_of_input_text = $('#container').find('input[type="text"]').length  - 7;
 
       var arr = [];
 
-      for (var i = 1; i <= no_of_input_text; i++){
+      for (var i = 0; i <= no_of_input_text; i++){
         var item_id     = $("#item_id"+i).val();
         var item_name   = $("#item_name"+i).val();
         var qty         = $("#qty"+i).val();
@@ -178,7 +191,7 @@ export class InvoiceEditPage extends Component {
       .then(response=>{
         if (response.data.success===true) {
           //alert(response.data.message)
-          let msg = {severity: 'success', summary: 'Success', detail: 'Adding Invoice'};
+          let msg = {severity: 'success', summary: 'Success', detail: 'Updating Invoice'};
           this.messages.show(msg);
           setTimeout(
               function() {
@@ -189,7 +202,7 @@ export class InvoiceEditPage extends Component {
         }
         else {
           //alert(response.data.message)
-          let msg = {severity: 'error', summary: 'Error', detail: 'Adding Invoice failed'};
+          let msg = {severity: 'error', summary: 'Error', detail: 'Updating Invoice failed'};
           this.messages.show(msg);
         }
       }).catch(error=>{

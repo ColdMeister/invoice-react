@@ -27,7 +27,8 @@
         "react-dom": "^16.8.6",
         "react-router-dom": "^4.3.1",
         "react-scripts": "3.0.1",
-        "react-transition-group": "^2.5.1"
+        "react-transition-group": "^2.5.1",
+        "sweetalert2": "^10.5.1"
     },
     "scripts": {
         "start": "set PORT=3001 && react-scripts start",
