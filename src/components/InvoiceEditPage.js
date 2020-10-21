@@ -1,88 +1,199 @@
-import React, { Component } from 'react';
-//import {CountryService} from '../service/CountryService';
-import {InputText} from 'primereact/inputtext';
-//import {InputTextarea} from 'primereact/inputtextarea';
-import {Messages} from 'primereact/messages';
-//import {Message} from 'primereact/message';
-import {Growl} from 'primereact/growl';
-//import {AutoComplete} from 'primereact/autocomplete';
-//import {MultiSelect} from 'primereact/multiselect';
-//import {Calendar} from 'primereact/calendar';
-//import {Chips} from 'primereact/chips';
-//import {Checkbox} from 'primereact/checkbox';
-//import {RadioButton} from 'primereact/radiobutton';
-//import {InputSwitch} from 'primereact/inputswitch';
-//import {Dropdown} from 'primereact/dropdown';
-//import {Password} from 'primereact/password';
-//import {Spinner} from 'primereact/spinner';
-//import {Slider} from 'primereact/components/slider/Slider';
-//import {ListBox} from 'primereact/listbox';
-//import {Rating} from 'primereact/rating';
-//import {ColorPicker} from 'primereact/colorpicker';
-//import {Editor} from 'primereact/editor';
-//import {ToggleButton} from 'primereact/togglebutton';
-//import {SelectButton} from 'primereact/selectbutton';
-import {Button} from 'primereact/button';
-//import {SplitButton} from 'primereact/splitbutton';
-import $ from 'jquery';
+import React, { useContext, useState, useEffect, useRef } from 'react';
+//import ReactDOM from 'react-dom';
+import 'antd/dist/antd.css';
+import { Table, Input, Button, Popconfirm, Form } from 'antd';
 import axios from 'axios';
+
+const EditableContext = React.createContext();
+
 const baseUrl = "http://localhost:3000";
 
+const EditableRow = ({ index, ...props }) => {
+  const [form] = Form.useForm();
+  return (
+    <Form form={form} component={false}>
+      <EditableContext.Provider value={form}>
+        <tr {...props} />
+      </EditableContext.Provider>
+    </Form>
+  );
+};
 
-export class InvoiceEditPage extends Component {
-
-  constructor(props){
-
-    super(props);
-    this.state = {
-      campInvoiceName: "",
-      campCompanyName:"",
-      campAddress:"",
-      campPhone:"",
-      campTotal:"",
-      campInvoiceDetail:''
+const EditableCell = ({
+  title,
+  editable,
+  children,
+  dataIndex,
+  record,
+  handleSave,
+  ...restProps
+}) => {
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef();
+  const form = useContext(EditableContext);
+  useEffect(() => {
+    if (editing) {
+      inputRef.current.focus();
     }
+  }, [editing]);
 
-
-     this.sendUpdate = this.sendUpdate.bind(this);
-     this.handleInputChange = this.handleInputChange.bind(this)
-
-
-
-  }
-
-  handleInputChange(index, newValue) {
-    //copy the array first
-   const updatedArray = [...this.state.campInvoiceDetail];
-   updatedArray[index] = newValue;
-   this.setState({
-        campInvoiceDetail: updatedArray
+  const toggleEdit = () => {
+    setEditing(!editing);
+    form.setFieldsValue({
+      [dataIndex]: record[dataIndex],
     });
+  };
+
+  const save = async (e) => {
+    try {
+      const values = await form.validateFields();
+      toggleEdit();
+      handleSave({ ...record, ...values });
+    } catch (errInfo) {
+      console.log('Save failed:', errInfo);
+    }
+  };
+
+  let childNode = children;
+
+  if (editable) {
+    childNode = editing ? (
+      <Form.Item
+        style={{
+          margin: 0,
+        }}
+        name={dataIndex}
+        rules={[
+          {
+            required: true,
+            message: `${title} is required.`,
+          },
+        ]}
+      >
+        <Input ref={inputRef} onPressEnter={save} onBlur={save} />
+      </Form.Item>
+    ) : (
+      <div
+        className="editable-cell-value-wrap"
+        style={{
+          paddingRight: 24,
+        }}
+        onClick={toggleEdit}
+      >
+        {children}
+      </div>
+    );
   }
 
+  return <td {...restProps}>{childNode}</td>;
+};
+
+export class InvoiceEditPage extends React.Component {
+  constructor(props) {
+    super(props);
+    this.columns = [
+      {
+        title: 'item_id',
+        dataIndex: 'item_id',
+        width: '20%',
+        editable: true,
+      },
+      {
+        title: 'Item name',
+        dataIndex: 'item_name',
+      },
+      {
+        title: 'Quantity',
+        dataIndex: 'quantity',
+      },
+      {
+        title: 'Amount',
+        dataIndex: 'amount',
+      },
+      {
+        title: 'Action',
+        dataIndex: 'action',
+        render: (text, record) =>
+          this.state.dataSource.length >= 1 ? (
+            <Popconfirm title="Sure to delete?" onConfirm={() => this.handleDelete(record.key)}>
+              <a href="#/">Delete</a>
+            </Popconfirm>
+          ) : null,
+      },
+    ];
+
+
+    this.state = {
+      dataSource: [],
+      count: "",
+    };
+
+   }
+
+
+  handleDelete = (key) => {
+    const dataSource = [...this.state.dataSource];
+    this.setState({
+      dataSource: dataSource.filter((item) => item.key !== key),
+    });
+  };
+  handleAdd = () => {
+    const { count, dataSource } = this.state;
+    const newData = {
+      key: count,
+      item_id: '0006',
+      item_name: `akuku(${count})`,
+      quantity: 2,
+      amount: 100,
+    };
+    this.setState({
+      dataSource: [...dataSource, newData],
+      count: count + 1,
+    });
+  };
+  handleSave = (row) => {
+    const newData = [...this.state.dataSource];
+    const index = newData.findIndex((item) => row.key === item.key);
+    const item = newData[index];
+    newData.splice(index, 1, { ...item, ...row });
+    this.setState({
+      dataSource: newData,
+    });
+  };
 
   componentDidMount(){
       let invoiceId = this.props.match.params.id;
+      //alert(invoiceId);
 
-      const url = baseUrl+"/invoice/get/"+invoiceId
+      const url = baseUrl+"/invoice/get/"+invoiceId;
       console.log(url);
       axios.get(url)
       .then(res=>{
         if (res.data.success) {
           const data = res.data.data[0];
+          const invdetails = data.InvoiceDetails;
+
+          const count = Object.keys(data.InvoiceDetails).length;
+
+          var newState = [...invdetails];
+          newState.forEach(function(i,index) {
+            i.key = index;
+          })
+          this.setState({dataSource: newState,count: count});
+
           this.setState({
             dataInvoice:data,
             campInvoiceName:data.invoice_name,
             campCompanyName:data.company_name,
             campAddress:data.address,
             campPhone:data.phone,
-            campTotal:data.total,
-            campInvoiceDetail:data.InvoiceDetails
+            campTotal:data.total
           })
 
+          console.log(this.state.campInvoiceName);
 
-        }
-        else {
+
+        }else {
           alert("Error web service")
         }
       })
@@ -91,123 +202,52 @@ export class InvoiceEditPage extends Component {
       })
   }
 
-  render() {
+  render() {
 
-          return (
-            <div>
-              <Messages ref={(el) => this.messages = el} />
-              <Growl ref={(el) => this.growl = el} style={{marginTop: '75px'}} />
-                <div className="p-fluid">
-                    <div className="p-field">
-                        <label htmlFor="invoice_name">Invoice Name</label>
-                        <InputText id="invoice_name" type="text" value={this.state.campInvoiceName} onChange={(value)=> this.setState({campInvoiceName:value.target.value})}/>
-                    </div>
-                    <div className="p-field">
-                        <label htmlFor="company_name">Company Name</label>
-                        <InputText id="company_name" type="text" value={this.state.campCompanyName} onChange={(value)=> this.setState({campCompanyName:value.target.value})}/>
-                    </div>
-                    <div className="p-field">
-                        <label htmlFor="address">Address</label>
-                        <InputText id="address" type="text" value={this.state.campAddress} onChange={(value)=> this.setState({campAddress:value.target.value})}/>
-                    </div>
-                    <div className="p-field">
-                        <label htmlFor="phone">Phone</label>
-                        <InputText id="phone" type="text" value={this.state.campPhone} onChange={(value)=> this.setState({campPhone:value.target.value})}/>
-                    </div>
-                    <div className="p-field">
-                        <label htmlFor="total">Total</label>
-                        <InputText id="total" type="text" value={this.state.campTotal} onChange={(value)=> this.setState({campTotal:value.target.value})}/>
-                    </div>
-                </div><br/><b>Invoice Details</b><br/><br/>
-                <div id="container">
-                {
-
-                  Object.keys(this.state.campInvoiceDetail).map((key, index) => {
-                      //console.log(this.state.campInvoiceDetail[key].item_id);
-
-                      return <div className="p-fluid p-formgrid p-grid" key={index} >
-
-                                <div className="p-field p-col">
-                                    <label htmlFor="item_id">Item id</label>
-                                    <InputText id={`item_id${key}`} value={this.state.campInvoiceDetail[key].item_id}  type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
-                                </div>
-                                <div className="p-field p-col">
-                                    <label htmlFor={`item_name${key}`}>Item Name</label>
-                                    <InputText id={`item_name${key}`} value={this.state.campInvoiceDetail[key].item_name} type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
-                                </div>
-                                <div className="p-field p-col">
-                                    <label htmlFor={`qty${key}`}>Quantity</label>
-                                    <InputText id={`qty${key}`} value={this.state.campInvoiceDetail[key].quantity} type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
-                                </div>
-                                <div className="p-field p-col">
-                                    <label htmlFor={`amount${key}`}>Amount</label>
-                                    <InputText id={`amount${key}`} value={this.state.campInvoiceDetail[key].amount} type="text" onChange={e => this.handleInputChange(index, e.target.value)}/>
-                                </div>
-                            </div>
-
-                  })
-
-                }
-
-
-                    <Button label="Update Invoice"  onClick={()=>this.sendUpdate()}/>
-                </div>
-            </div>
-
-          );
-
-    }
-
-    sendUpdate(){
-      let invId = this.props.match.params.id;
-      const baseUrl = "http://localhost:3000/invoice/update/"+invId;
-
-      var no_of_input_text = $('#container').find('input[type="text"]').length  - 7;
-
-      var arr = [];
-
-      for (var i = 0; i <= no_of_input_text; i++){
-        var item_id     = $("#item_id"+i).val();
-        var item_name   = $("#item_name"+i).val();
-        var qty         = $("#qty"+i).val();
-        var amount      = $("#amount"+i).val();
-
-        if(item_id !== ''){
-          arr.push({item_id:item_id, item_name:item_name,quantity:qty, amount:amount});
-        }
+    var { dataSource } = this.state;
+    const components = {
+      body: {
+        row: EditableRow,
+        cell: EditableCell,
+      },
+    };
+    const columns = this.columns.map((col) => {
+      if (!col.editable) {
+        return col;
       }
 
-      const datapost = {
-        invoice_name : this.state.campInvoiceName,
-        company_name : this.state.campCompanyName,
-        address : this.state.campAddress,
-        phone : this.state.campPhone,
-        total  : this.state.campTotal,
-        itemdetails: arr
-      }
-
-
-      axios.post(baseUrl,datapost)
-      .then(response=>{
-        if (response.data.success===true) {
-          //alert(response.data.message)
-          let msg = {severity: 'success', summary: 'Success', detail: 'Updating Invoice'};
-          this.messages.show(msg);
-          setTimeout(
-              function() {
-                  window.location.reload(false);
-              },
-              2000
-          );
-        }
-        else {
-          //alert(response.data.message)
-          let msg = {severity: 'error', summary: 'Error', detail: 'Updating Invoice failed'};
-          this.messages.show(msg);
-        }
-      }).catch(error=>{
-        alert("Error 34 "+error)
-      })
-    }
+      return {
+        ...col,
+        onCell: (record) => ({
+          record,
+          editable: col.editable,
+          dataIndex: col.dataIndex,
+          title: col.title,
+          handleSave: this.handleSave,
+        }),
+      };
+    });
+    return (
+      <div>
+        <Button
+          onClick={this.handleAdd}
+          type="primary"
+          style={{
+            marginBottom: 16,
+          }}
+        >
+          Add a row
+        </Button>
+        <Table
+          components={components}
+          rowClassName={() => 'editable-row'}
+          bordered
+          dataSource={dataSource}
+          columns={columns}
+        />
+      </div>
+    );
+  }
 }
+
 export default InvoiceEditPage;
